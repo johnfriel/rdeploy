@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Configuration options
+shopt -s extglob
+configfile=".rdeploy"
+ignorefile=".rdeploy-ignore"
+
+###############################
+# Read options from config file
+
+while IFS='= ' read left right
+do
+    if [[ ! $left =~ ^\ *# && -n $left ]]; then
+        right="${right%%\#*}"    # Del in line right comments
+        right="${right%%*( )}"   # Del trailing spaces
+        right="${right%\"*}"     # Del opening string quotes 
+        right="${right#\"*}"     # Del closing string quotes 
+        declare $left="$right"
+    fi
+done < $configfile
+
+# echo "Content of user is $user"
+# echo "Content of host is $host"
+# echo "Content of path is $path"
+
+# Deploy!
+command="rsync -avz --delete --exclude-from $ignorefile ./ $user@$host:$path"
+$command

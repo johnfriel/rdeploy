@@ -1,0 +1,3 @@
+user = deploy
+host= clienthost
+path="/data/staging/rdeploy"
