@@ -3,9 +3,11 @@
 #######################################################################
 # 
 # A simple script for 'deploying' static HTML sites to a webserver.
-# rdeploy expects to read configuration options from a file (in
-# the directory from which it's run) named '.rdeploy' and a list
-# of files to ignore from a file called 'rdeploy-ignore.'
+# Current use is really nothing more than to save a few keystrokes 
+# typing arguments into rsync by saving the arguments in config files.
+# rdeploy expects to read server options from a file (in the directory
+# from which it's run) named '.rdeploy' and a list of files to ignore
+# from a file called 'rdeploy-ignore'. Enjoy!
 #
 #######################################################################
 
