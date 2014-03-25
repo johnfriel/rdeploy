@@ -1,5 +1,15 @@
 #!/bin/bash
 
+#######################################################################
+# 
+# A simple script for 'deploying' static HTML sites to a webserver.
+# rdeploy expects to read configuration options from a file (in
+# the directory from which it's run) named '.rdeploy' and a list
+# of files to ignore from a file called 'rdeploy-ignore.'
+#
+#######################################################################
+
+
 # Configuration options
 shopt -s extglob
 configfile=".rdeploy"
@@ -19,9 +29,6 @@ do
     fi
 done < $configfile
 
-# echo "Content of user is $user"
-# echo "Content of host is $host"
-# echo "Content of path is $path"
 
 # Deploy!
 command="rsync -avz --delete --exclude-from $ignorefile ./ $user@$host:$path"
