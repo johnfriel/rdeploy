@@ -12,26 +12,115 @@
 #######################################################################
 
 
-# Configuration options
 shopt -s extglob
-configfile=".rdeploy"
-ignorefile=".rdeploy-ignore"
 
-###############################
-# Read options from config file
 
-while IFS='= ' read left right
-do
-    if [[ ! $left =~ ^\ *# && -n $left ]]; then
-        right="${right%%\#*}"    # Del in line right comments
-        right="${right%%*( )}"   # Del trailing spaces
-        right="${right%\"*}"     # Del opening string quotes 
-        right="${right#\"*}"     # Del closing string quotes 
-        declare $left="$right"
+printUsage() {
+  echo "Usage: rdeploy [-c]"
+  exit 1
+}
+
+checkForConfiguration() {
+  deploydir="$1/"
+  configfile="$1/.rdeploy"
+  ignorefile="$1/.rdeploy-ignore"
+  
+  # Perform check
+  if [[ -a $configfile && -a $ignorefile ]]
+  then
+    found_configuration=true
+  else
+    # Try again, one directory up
+    if ! [ $1 = '/' ]
+    then
+      new_path=`dirname $1`
+      checkForConfiguration $new_path
     fi
-done < $configfile
+  fi
+}
+
+findConfiguration() {
+  found_configuration=false
+  checkForConfiguration `pwd`
+}
+
+createConfiguration() {
+  echo "Please enter a host, username and target directory for deployment."
+  read -p "host: " host
+  read -p "user: " user
+  read -p "path: " path
+  
+  cat << EOF > ./.rdeploy
+user=$user
+host=$host
+path=$path
+EOF
+  
+  cat << EOF > ./.rdeploy-ignore
+.rdeploy
+.rdeploy-ignore
+.DS_Store
+EOF
+
+  echo "rdeploy has been successfully configured. Inspect ./.rdeploy and ./.rdeploy-ignore to see the results."
+}
+    
+promptForConfiguration() {
+  read -p "This directory isn't configured for use with rdeploy. Would you like to configure it now? [y/n]" yn
+  case $yn in
+      [Yy]* ) 
+        createConfiguration 
+        ;;
+      * )
+        exit 0
+        ;;
+  esac
+}
+
+deploy() {
+  while IFS='= ' read left right
+  do
+      if [[ ! $left =~ ^\ *# && -n $left ]]; then
+          right="${right%%\#*}"    # Del in line right comments
+          right="${right%%*( )}"   # Del trailing spaces
+          right="${right%\"*}"     # Del opening string quotes 
+          right="${right#\"*}"     # Del closing string quotes 
+          declare $left="$right"
+      fi
+  done < $configfile
+  
+  command="rsync -avz --delete --exclude-from $ignorefile $deploydir $user@$host:$path"
+  
+  # Fire!
+  $command
+}
+
+attemptToDeploy() {
+  findConfiguration
+  if [ $found_configuration = true ]
+  then
+    deploy
+  else
+    promptForConfiguration
+  fi 
+}
 
 
-# Deploy!
-command="rsync -avz --delete --exclude-from $ignorefile ./ $user@$host:$path"
-$command
+# Main
+case $# in
+  0)
+    attemptToDeploy
+    ;;
+  1)
+    if [ $1 = '-c' ]
+    then
+      createConfiguration
+    else
+      printUsage
+    fi
+    ;;
+  *)
+    printUsage
+    ;;
+esac
+
